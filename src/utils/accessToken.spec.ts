@@ -1,9 +1,10 @@
 import assert from 'assert';
-import { accessToken } from '../utils/accessToken.js';
-import { sinonUtil } from './sinonUtil.js';
+import fs from 'fs';
 import sinon from 'sinon';
 import auth from '../Auth.js';
 import { CommandError } from '../Command.js';
+import { accessToken } from '../utils/accessToken.js';
+import { sinonUtil } from './sinonUtil.js';
 
 describe('utils/accessToken', () => {
 
@@ -16,7 +17,8 @@ describe('utils/accessToken', () => {
 
   afterEach(() => {
     sinonUtil.restore([
-      accessToken.isAppOnlyAccessToken
+      accessToken.isAppOnlyAccessToken,
+      fs.readFileSync
     ]);
   });
 
@@ -198,5 +200,53 @@ describe('utils/accessToken', () => {
     const payload = Buffer.from('not-json').toString('base64');
     const token = `header.${payload}.signature`;
     assert.deepStrictEqual(accessToken.getScopesFromAccessToken(token), []);
+  });
+
+  it('reads access token from JSON token file using access_token property', () => {
+    const jwtPayload = Buffer.from(JSON.stringify({
+      exp: 1893456000,
+      oid: '028de82d-7fd9-476e-a9fd-be9714280ff3'
+    })).toString('base64');
+    const jwt = `abc.${jwtPayload}.def`;
+    sinon.stub(fs, 'readFileSync').returns(JSON.stringify({ access_token: jwt }));
+
+    const actual = accessToken.readAccessTokenFromFile('/tmp/token.json');
+
+    assert.strictEqual(actual.accessToken, jwt);
+    assert.strictEqual((actual.expiresOn as Date).getTime(), 1893456000000);
+  });
+
+  it('reads access token from JSON token file using accessToken property', () => {
+    const jwtPayload = Buffer.from(JSON.stringify({
+      exp: 1893456000
+    })).toString('base64');
+    const jwt = `abc.${jwtPayload}.def`;
+    sinon.stub(fs, 'readFileSync').returns(JSON.stringify({ accessToken: jwt }));
+
+    const actual = accessToken.readAccessTokenFromFile('/tmp/token.json');
+
+    assert.strictEqual(actual.accessToken, jwt);
+    assert.strictEqual((actual.expiresOn as Date).getTime(), 1893456000000);
+  });
+
+  it('reads access token from plain text token file', () => {
+    const jwtPayload = Buffer.from(JSON.stringify({
+      exp: 1893456000
+    })).toString('base64');
+    const jwt = `abc.${jwtPayload}.def`;
+    sinon.stub(fs, 'readFileSync').returns(jwt);
+
+    const actual = accessToken.readAccessTokenFromFile('/tmp/token.txt');
+
+    assert.strictEqual(actual.accessToken, jwt);
+    assert.strictEqual((actual.expiresOn as Date).getTime(), 1893456000000);
+  });
+
+  it('throws error when token file does not contain a valid access token', () => {
+    sinon.stub(fs, 'readFileSync').returns('not-a-token');
+
+    assert.throws(() => accessToken.readAccessTokenFromFile('/tmp/token.txt'), (err: any) => {
+      return err instanceof CommandError && err.message === 'Token file does not contain a valid access token.';
+    });
   });
 });

@@ -358,6 +358,18 @@ describe(commands.LOGIN, () => {
     assert.strictEqual(auth.connection.secret, 'unBrEakaBle@123', 'Incorrect secret set');
   });
 
+  it('logs in to Microsoft 365 using token when authType token set', async () => {
+    sinon.stub(fs, 'existsSync').callsFake(() => true);
+    await command.action(logger, {
+      options: commandOptionsSchema.parse({
+        authType: 'token',
+        tokenFile: '/tmp/token.json'
+      })
+    });
+    assert.strictEqual(auth.connection.authType, AuthType.Token, 'Incorrect authType set');
+    assert.strictEqual(auth.connection.tokenFile, '/tmp/token.json', 'Incorrect tokenFile set');
+  });
+
   it('logs in to Microsoft 365 using client secret authType "secret" with secret set in CLI config', async () => {
     sinonUtil.restore(config.get);
     sinon.stub(config, 'get').callsFake(setting => {
@@ -454,6 +466,22 @@ describe(commands.LOGIN, () => {
     const actual = commandOptionsSchema.safeParse({
       authType: 'certificate',
       certificateFile: 'certificate'
+    });
+    assert.strictEqual(actual.success, false);
+  });
+
+  it('fails validation if authType is set to token and tokenFile not specified', () => {
+    const actual = commandOptionsSchema.safeParse({
+      authType: 'token'
+    });
+    assert.strictEqual(actual.success, false);
+  });
+
+  it('fails validation if authType is set to token and tokenFile does not exist', () => {
+    sinon.stub(fs, 'existsSync').callsFake(() => false);
+    const actual = commandOptionsSchema.safeParse({
+      authType: 'token',
+      tokenFile: '/tmp/token.json'
     });
     assert.strictEqual(actual.success, false);
   });
