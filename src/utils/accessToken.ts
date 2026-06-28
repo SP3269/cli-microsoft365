@@ -175,7 +175,8 @@ export const accessToken = {
 
     if (!expiresOn) {
       try {
-        const { payload } = this.getDecodedAccessToken(accessTokenString);
+        const payloadString = Buffer.from(chunks[1], 'base64').toString();
+        const payload: any = JSON.parse(payloadString);
         if (payload.exp) {
           expiresOn = new Date(payload.exp * 1000);
         }

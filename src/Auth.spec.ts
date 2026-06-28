@@ -1939,7 +1939,7 @@ describe('Auth', () => {
     const jwt = `abc.${jwtPayload}.def`;
     auth.connection.authType = AuthType.Token;
     auth.connection.tokenFile = '/tmp/token.json';
-    sinon.stub(fs, 'readFileSync').returns(JSON.stringify({ access_token: jwt }));
+    readFileSyncStub.returns(JSON.stringify({ access_token: jwt }));
 
     const accessTokenValue = await auth.ensureAccessToken(resource, logger);
 
@@ -1957,7 +1957,7 @@ describe('Auth', () => {
     const jwt = `abc.${jwtPayload}.def`;
     auth.connection.authType = AuthType.Token;
     auth.connection.tokenFile = '/tmp/token.json';
-    sinon.stub(fs, 'readFileSync').returns(JSON.stringify({ access_token: jwt }));
+    readFileSyncStub.returns(JSON.stringify({ access_token: jwt }));
 
     await auth.ensureAccessToken(resource, logger, true);
 
@@ -1986,7 +1986,7 @@ describe('Auth', () => {
       accessToken: expiredJwt,
       expiresOn: new Date(Date.now() - 1000)
     };
-    const readFileSyncStub = sinon.stub(fs, 'readFileSync').returns(JSON.stringify({ access_token: freshJwt }));
+    readFileSyncStub.returns(JSON.stringify({ access_token: freshJwt }));
 
     const accessTokenValue = await auth.ensureAccessToken(resource, logger);
 

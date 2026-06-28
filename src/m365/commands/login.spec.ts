@@ -997,6 +997,34 @@ describe(commands.LOGIN, () => {
     assert(deactivateStub.called);
   });
 
+  it(`starts the login flow again when using a different token file`, async () => {
+    const future = new Date();
+    future.setSeconds(future.getSeconds() + 10);
+    Object.assign(auth.connection, {
+      active: true,
+      authType: AuthType.Token,
+      tokenFile: '/tmp/token1.json',
+      appId: '00000000-0000-0000-0000-000000000000',
+      tenant: '00000000-0000-0000-0000-000000000000'
+    });
+    auth.connection.accessTokens[auth.defaultResource] = {
+      expiresOn: future.toISOString(),
+      accessToken: 'abc'
+    };
+
+    sinon.stub(fs, 'existsSync').callsFake(() => true);
+
+    await command.action(logger, {
+      options: commandOptionsSchema.parse({
+        ensure: true,
+        authType: 'token',
+        tokenFile: '/tmp/token2.json'
+      })
+    });
+
+    assert(deactivateStub.called);
+  });
+
   it(`starts the login flow when the access token expired (Date)`, async () => {
     const past = new Date();
     past.setSeconds(past.getSeconds() - 1);
