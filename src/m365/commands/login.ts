@@ -160,12 +160,14 @@ class LoginCommand extends Command {
       return true;
     }
 
-    if (options.appId && options.appId !== auth.connection.appId) {
-      return true;
-    }
+    if (authType !== AuthType.Token) {
+      if (options.appId && options.appId !== auth.connection.appId) {
+        return true;
+      }
 
-    if (options.tenant && options.tenant !== auth.connection.tenant) {
-      return true;
+      if (options.tenant && options.tenant !== auth.connection.tenant) {
+        return true;
+      }
     }
 
     if (authType === AuthType.Password && (options.password && options.userName !== auth.connection.userName)) {
@@ -238,8 +240,14 @@ class LoginCommand extends Command {
     }
 
     const authType = args.options.authType || cli.getSettingWithDefaultValue<string>(settingsNames.authType, 'deviceCode');
-    auth.connection.appId = args.options.appId || cli.getClientId();
-    auth.connection.tenant = args.options.tenant || cli.getTenant();
+    if (authType === 'token') {
+      auth.connection.appId = undefined;
+      auth.connection.tenant = undefined;
+    }
+    else {
+      auth.connection.appId = args.options.appId || cli.getClientId();
+      auth.connection.tenant = args.options.tenant || cli.getTenant();
+    }
     auth.connection.name = args.options.connectionName;
 
     switch (authType) {

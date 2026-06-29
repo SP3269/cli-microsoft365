@@ -370,6 +370,28 @@ describe(commands.LOGIN, () => {
     assert.strictEqual(auth.connection.tokenFile, '/tmp/token.json', 'Incorrect tokenFile set');
   });
 
+  it('does not set appId and tenant when authType token set even if configured in CLI', async () => {
+    sinonUtil.restore(config.get);
+    sinon.stub(config, 'get').callsFake(setting => {
+      if (setting === settingsNames.clientId) {
+        return '00000000-0000-0000-0000-000000000000';
+      }
+      if (setting === settingsNames.tenantId) {
+        return '11111111-1111-1111-1111-111111111111';
+      }
+      return undefined;
+    });
+    sinon.stub(fs, 'existsSync').callsFake(() => true);
+    await command.action(logger, {
+      options: commandOptionsSchema.parse({
+        authType: 'token',
+        tokenFile: '/tmp/token.json'
+      })
+    });
+    assert.strictEqual(auth.connection.appId, undefined, 'appId should not be set for token auth');
+    assert.strictEqual(auth.connection.tenant, undefined, 'tenant should not be set for token auth');
+  });
+
   it('logs in to Microsoft 365 using client secret authType "secret" with secret set in CLI config', async () => {
     sinonUtil.restore(config.get);
     sinon.stub(config, 'get').callsFake(setting => {

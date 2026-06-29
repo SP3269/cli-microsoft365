@@ -72,7 +72,7 @@ export class Connection {
   // ID of the Microsoft Entra ID app used to authenticate
   appId?: string;
   // ID of the tenant where the Microsoft Entra app is registered; common if multi-tenant
-  tenant: string = 'common';
+  tenant?: string;
   cloudType: CloudType = CloudType.Public;
 
   constructor() {
